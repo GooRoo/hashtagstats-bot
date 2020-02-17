@@ -2,7 +2,7 @@ import logging
 import os
 import telegram
 
-from telegram import MessageEntity, ReplyKeyboardMarkup
+from telegram import MessageEntity, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 
 import db
@@ -388,7 +388,8 @@ def on_detailed_stats(update, context):
         else:
             reply = 'Увы, я пока не в курсе ни о каких ссылках в этом чате.'
 
-    m.reply_markdown(reply)
+    m.reply_markdown(reply, reply_markup=ReplyKeyboardRemove())
+
 
 
 
