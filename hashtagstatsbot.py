@@ -220,6 +220,14 @@ def on_tag_stats(update, context):
         update.message.reply_text('Использование: /tag #hashtag')
 
 
+def escape_markdown_tag(tag):
+    return tag.replace('_', '\\_')
+
+
+def escape_markdown_tags(tags):
+    return [escape_markdown_tag(t) for t in tags]
+
+
 def on_user_stats(update, context):
     def get_user_id(m, e):
         if e.type == MessageEntity.TEXT_MENTION:
@@ -277,7 +285,7 @@ def on_user_stats(update, context):
             }*.'''
 
         if tags is not None and len(tags["tags"]) > 0:
-            reply += f'\n\nАвтор тегов: {" ".join(sorted(tags["tags"]))}'
+            reply += f'\n\nАвтор тегов: {" ".join(sorted(escape_markdown_tags(tags["tags"])))}'
 
         update.message.reply_markdown(reply)
     except (IndexError, ValueError):
@@ -319,21 +327,21 @@ def on_detailed_stats(update, context):
             reply = '*ТОП тегов* (по количеству ссылок):\n\n'
 
             hs = [
-                f'{n} {t["hashtag"]} ({t["links"]})'
+                f'{n} {escape_markdown_tag(t["hashtag"])} ({t["links"]})'
                 for n, t in leaderboard(tags)
             ]
 
-            m.reply_markdown(reply + '\n'.join(hs))
+            reply += '\n'.join(hs)
         else:
-            m.reply_markdown('Похоже, в этом чате пока нет полезных тегов (или я о них не знаю).')
+            reply = 'Похоже, в этом чате пока нет полезных тегов (или я о них не знаю).'
 
     elif m.text == 'Все теги':
         tags = d.all_tags(chat_id).fetchall()
         if tags is not None:
-            hs = [t['hashtag'] for t in tags]
-            m.reply_text(' '.join(hs))
+            hs = escape_markdown_tags([t['hashtag'] for t in tags])
+            reply = ' '.join(hs)
         else:
-            m.reply_markdown('Похоже, в этом чате пока нет полезных тегов (или я о них не знаю).')
+            reply = 'Похоже, в этом чате пока нет полезных тегов (или я о них не знаю).'
 
     elif m.text == 'ТОП-5 контрибьютеров':
         contribs = d.top_contributors(chat_id).fetchall()
@@ -344,9 +352,9 @@ def on_detailed_stats(update, context):
                 f'{n} {mention_user(c["id"], c["first_name"], c["last_name"], c["username"])} ({c["sum"]})'
                 for n, c in leaderboard(contribs)
             ]
-            m.reply_markdown(reply + '\n'.join(cs))
+            reply += '\n'.join(cs)
         else:
-            m.reply_markdown('Увы, я пока не в курсе ни о каких ссылках в этом чате.')
+            reply = 'Увы, я пока не в курсе ни о каких ссылках в этом чате.'
 
     elif m.text == 'БОТТОМ-5 контрибьютеров':
         contribs = d.bottom_contributers(chat_id).fetchall()
@@ -357,9 +365,9 @@ def on_detailed_stats(update, context):
                 f'{n} {mention_user(c["id"], c["first_name"], c["last_name"], c["username"])} ({c["sum"]})'
                 for n, c in leaderboard(contribs)
             ]
-            m.reply_markdown(reply + '\n'.join(cs))
+            reply += '\n'.join(cs)
         else:
-            m.reply_markdown('Похоже, в списке должен был оказаться весь чат (или же никто не кидал ссылок с тех пор, как меня сюда добавили).')
+            reply = 'Похоже, в списке должен был оказаться весь чат (или же никто не кидал ссылок с тех пор, как меня сюда добавили).'
 
     elif m.text == 'ТОП музыкальных сервисов':
 
@@ -377,10 +385,11 @@ def on_detailed_stats(update, context):
             others = [m for m in music_services if m["category"] is None]
             if len(others) != 0:
                 reply += f'\n\nСсылки на всё прочее: {others[0]["count"]} {tr("штука", others[0]["count"])}'
-
-            m.reply_markdown(reply)
         else:
-            m.reply_markdown('Увы, я пока не в курсе ни о каких ссылках в этом чате.')
+            reply = 'Увы, я пока не в курсе ни о каких ссылках в этом чате.'
+
+    m.reply_markdown(reply)
+
 
 
 def main(webhook=False):
