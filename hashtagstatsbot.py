@@ -256,14 +256,7 @@ def on_user_stats(update, context):
                 )
             } является автором *{tags["count"]} {tr("тега", tags["count"])}* в этом чате.'''
         else:
-            reply += f'''{
-                mention_user(
-                    tags["id"],
-                    tags["first_name"],
-                    tags["last_name"],
-                    tags["username"]
-                )
-            } — практически тёмная лошадка.'''
+            reply += f'''{context.args[0]} — практически тёмная лошадка.'''
 
         links = d.links_by_author(user_id, chat_id).fetchone()
         if links is not None:
