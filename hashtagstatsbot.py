@@ -15,7 +15,7 @@ logging.basicConfig(
 
 logger = logging.Logger(__name__)
 
-d = db.DB(full_uri=os.environ['DATABASE_URI'])
+d = db.DB(full_uri=os.environ['DATABASE_URL'])
 
 
 def error(update, context):
@@ -381,11 +381,11 @@ def on_detailed_stats(update, context):
             m.reply_markdown('Увы, я пока не в курсе ни о каких ссылках в этом чате.')
 
 
-def main():
+def main(webhook=False):
     d.create_all()
 
-    token = os.environ['TG_TOKEN']
-    updater = Updater(token=token, use_context=True)
+    TOKEN = os.environ['TG_TOKEN']
+    updater = Updater(token=TOKEN, use_context=True)
 
     dispatcher = updater.dispatcher
 
@@ -419,11 +419,20 @@ def main():
 
     dispatcher.add_error_handler(error)
 
-    logger.info('Starting polling...')
-    updater.start_polling()
+    if webhook:
+        logger.info('Creating a webhook...')
+        updater.start_webhook(
+            listen='0.0.0.0',
+            port=int(os.environ.get('PORT', '8443')),
+            url_path=TOKEN
+        )
+        updater.bot.set_webhook('https://hashtagstats-bot.herokuapp.com/' + TOKEN)
+    else:
+        logger.info('Starting polling...')
+        updater.start_polling()
 
     updater.idle()
 
 
 if __name__ == "__main__":
-    main()
+    main(webhook=True)

@@ -6,8 +6,8 @@ from telethon.tl.types import MessageEntityUrl, MessageEntityTextUrl, MessageEnt
 
 import db
 
-api_id = 123456
-api_hash = 'deadbeef01010101010100101010101'
+api_id = int(os.environ['TG_API_ID'])
+api_hash = os.environ['TG_API_HASH']
 
 client = TelegramClient('dumpchat_hashtags', api_id, api_hash)
 
@@ -54,13 +54,9 @@ async def unroll_message(message):
 
 
 async def dump_chat():
-    music_vibes = 12345678
+    music_vibes = int(os.environ['TG_INIT_CHAT_ID'])
 
-    d = db.DB(
-        user='postgres',
-        password='password',
-        db='postgres'
-    )
+    d = db.DB(full_uri=os.environ['DATABASE_URL'])
     d.create_all()
 
     print('Processing "Music Vibes"...')
