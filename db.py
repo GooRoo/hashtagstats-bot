@@ -70,7 +70,7 @@ class DB(object):
         Column('hashtag', hashtag_type, primary_key=True)
     )
 
-    def __init__(self, user, password, db, host='localhost', port=5432, *, full_uri='', echo=False):
+    def __init__(self, user='', password='', db='', host='localhost', port=5432, *, full_uri='', echo=False):
         if full_uri:
             self.engine = create_engine(full_uri, echo=echo)
         else:
