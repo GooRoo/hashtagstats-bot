@@ -329,7 +329,7 @@ def on_detailed_stats(update, context):
         tags = d.all_tags(chat_id).fetchall()
         if tags is not None:
             hs = [t['hashtag'] for t in tags]
-            m.reply_markdown(' '.join(hs))
+            m.reply_text(' '.join(hs))
         else:
             m.reply_markdown('Похоже, в этом чате пока нет полезных тегов (или я о них не знаю).')
 
