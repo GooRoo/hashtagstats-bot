@@ -255,6 +255,15 @@ def on_user_stats(update, context):
                     tags["username"]
                 )
             } является автором *{tags["count"]} {tr("тега", tags["count"])}* в этом чате.'''
+        else:
+            reply += f'''{
+                mention_user(
+                    tags["id"],
+                    tags["first_name"],
+                    tags["last_name"],
+                    tags["username"]
+                )
+            } — практически тёмная лошадка.'''
 
         links = d.links_by_author(user_id, chat_id).fetchone()
         if links is not None:
@@ -265,7 +274,7 @@ def on_user_stats(update, context):
                 reply += f' Также является отправителем *{links["sum"]} {tr("ссылки", links["sum"])}*.'
 
         tagged = d.tagged_foreign_by_author(user_id, chat_id).fetchall()
-        if tagged is not None:
+        if tagged is not None and len(tagged) > 0:
             if links is not None and links["sum"] == 0:
                 reply += ' Зато '
             else:
@@ -274,7 +283,7 @@ def on_user_stats(update, context):
                 tr("штука", len(tagged))
             }*.'''
 
-        if tags is not None and tags["tags"] > 0:
+        if tags is not None and len(tags["tags"]) > 0:
             reply += f'\n\nАвтор тегов: {" ".join(sorted(tags["tags"]))}'
 
         update.message.reply_markdown(reply)

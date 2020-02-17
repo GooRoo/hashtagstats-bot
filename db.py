@@ -356,7 +356,7 @@ class DB(object):
 
     def top_contributors(self, chat_id, limit=5):
         return self.engine.execute(text('''
-            SELECT u.id, u.first_name, u.last_name, u.username, sum(array_length(m.urls, 1)) AS sum
+            SELECT u.id, u.first_name, u.last_name, u.username, coalesce(sum(array_length(m.urls, 1)), 0) AS sum
             FROM users u
                 INNER JOIN messages m on u.id = m."from"
                 INNER JOIN chats c on m.chat = c.id
