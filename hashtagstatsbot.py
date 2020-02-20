@@ -309,14 +309,14 @@ def leaderboard(iterable):
     )
 
 
-def weekly_contibutors(chat_id):
+def weekly_contributors(chat_id):
     def format_date(date):
         return date.strftime('%d.%m.%Y')
 
-    d = Delorean()
-    step = 1 if d.date.isoweekday() == 1 else 2
-    from_ = d.last_monday(step).date
-    to = d.last_sunday(step).date
+    now = Delorean()
+    step_from = 1 if now.date.isoweekday() == 1 else 2
+    from_ = now.last_monday(step_from).date
+    to = now.last_sunday().date if now.date.isoweekday() == 7 else now.date
     contribs = d.top_contributors_by_date(chat_id, from_=from_, to=to).fetchall()
     if contribs is not None:
         reply = f'*Результаты недели* ({format_date(from_)}–{format_date(to)}):\n\n'
@@ -337,7 +337,7 @@ def weekly_contibutors(chat_id):
 
 def on_weekly_stats(context):
     chat_id = context.job.context
-    reply = weekly_contibutors(chat_id)
+    reply = weekly_contributors(chat_id)
     context.bot.send_message(chat_id, reply, parse_mode=ParseMode.MARKDOWN, disable_notification=True)
 
 
@@ -358,7 +358,7 @@ def enable_weekly_stats(update, context):
     context.chat_data['weekly_stats'] = new_job
 
     context.bot.send_message(chat_id, 'Отныне каждую неделю я буду присылать краткую статистику в следующем формате:')
-    context.bot.send_message(chat_id, weekly_contibutors(chat_id), parse_mode=ParseMode.MARKDOWN)
+    context.bot.send_message(chat_id, weekly_contributors(chat_id), parse_mode=ParseMode.MARKDOWN)
 
 
 def disable_weekly_stats(update, context):
