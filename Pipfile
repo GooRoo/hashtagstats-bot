@@ -12,6 +12,7 @@ python-telegram-bot = "*"
 sqlalchemy = "*"
 psycopg2 = "*"
 telethon = "*"
+delorean = "*"
 
 [requires]
 python_version = "3.7"

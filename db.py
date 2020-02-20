@@ -366,6 +366,19 @@ class DB(object):
             LIMIT :limit
         '''), chat_id=chat_id, limit=limit)
 
+    def top_contributors_by_date(self, chat_id, from_, to, limit=5):
+        return self.engine.execute(text('''
+            SELECT u.id, u.first_name, u.last_name, u.username, coalesce(sum(array_length(m.urls, 1)), 0) AS sum
+            FROM users u
+                INNER JOIN messages m on u.id = m."from"
+                INNER JOIN chats c on m.chat = c.id
+            WHERE c.id = :chat_id
+              AND m.date >= :from_date AND m.date <= :to_date
+            GROUP BY u.id, u.first_name, u.last_name, u.username
+            ORDER BY sum DESC
+            LIMIT :limit
+        '''), chat_id=chat_id, from_date=from_, to_date=to, limit=limit)
+
     def bottom_contributers(self, chat_id, limit=5):
         return self.engine.execute(text('''
             SELECT u.id, u.first_name, u.last_name, u.username, coalesce(sum(array_length(m.urls, 1)), 0) AS sum

@@ -2,7 +2,9 @@ import logging
 import os
 import telegram
 
-from telegram import MessageEntity, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from datetime import timedelta
+from delorean import Delorean
+from telegram import MessageEntity, ReplyKeyboardMarkup, ReplyKeyboardRemove, ParseMode
 from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
 
 import db
@@ -300,13 +302,72 @@ def on_stats(update, context):
     ], one_time_keyboard=True))
 
 
-def on_detailed_stats(update, context):
-    def leaderboard(iterable):
-        return zip(
-            ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'],
-            iterable
-        )
+def leaderboard(iterable):
+    return zip(
+        ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'],
+        iterable
+    )
 
+
+def weekly_contibutors(chat_id):
+    def format_date(date):
+        return date.strftime('%d.%m.%Y')
+
+    d = Delorean()
+    step = 1 if d.date.isoweekday() == 1 else 2
+    from_ = d.last_monday(step).date
+    to = d.last_sunday(step).date
+    contribs = d.top_contributors_by_date(chat_id, from_=from_, to=to).fetchall()
+    if contribs is not None:
+        reply = f'*Результаты недели* ({format_date(from_)}–{format_date(to)}):\n\n'
+
+        cs = [
+            f'{n} {mention_user(c["id"], c["first_name"], c["last_name"], c["username"])} ({c["sum"]})'
+            for n, c in leaderboard(contribs)
+        ]
+        reply += '\n'.join(cs)
+        reply += f'\n\n{escape_markdown_tag("#weekly_stats")}'
+    else:
+        reply = f'''Никто не прислал ничего полезного за целую неделю ({format_date(from_)}–{format_date(to)}). Стыдно должно быть, товарищи!
+
+{escape_markdown_tag("#weekly_stats")}'''
+
+    return reply
+
+
+def on_weekly_stats(context):
+    chat_id = context.job.context
+    reply = weekly_contibutors(chat_id)
+    context.bot.send_message(chat_id, reply, parse_mode=ParseMode.MARKDOWN, disable_notification=True)
+
+
+def enable_weekly_stats(update, context):
+    chat_id = update.effective_chat.id
+
+    if 'weekly_stats' in context.chat_data:
+        old_job = context.chat_data['weekly_stats']
+        old_job.schedule_removal()
+
+    new_job = context.job_queue.run_repeating(
+        on_weekly_stats,
+        interval=timedelta(weeks=1),
+        first=Delorean(timezone='Europe/Berlin').next_monday().midnight + timedelta(hours=8),
+        context=chat_id,
+        name='weekly_stats'
+    )
+    context.chat_data['weekly_stats'] = new_job
+
+    context.bot.send_message(chat_id, 'Отныне каждую неделю я буду присылать краткую статистику в следующем формате:')
+    context.bot.send_message(chat_id, weekly_contibutors(chat_id), parse_mode=ParseMode.MARKDOWN)
+
+
+def disable_weekly_stats(update, context):
+    if 'weekly_stats' in context.chat_data:
+        old_job = context.chat_data['weekly_stats']
+        old_job.schedule_removal()
+
+
+def on_detailed_stats(update, context):
     def nice_category(category):
         names = {
             'spotify': 'Spotify',
@@ -411,6 +472,12 @@ def main(webhook=False):
 
     user_stats_handler = CommandHandler('user', on_user_stats)
     dispatcher.add_handler(user_stats_handler)
+
+    enable_weekly_handler = CommandHandler('disable_weekly', disable_weekly_stats)
+    dispatcher.add_handler(enable_weekly_handler)
+
+    disable_weekly_handler = CommandHandler('weekly', enable_weekly_stats)
+    dispatcher.add_handler(disable_weekly_handler)
 
     stats_handler = CommandHandler('stats', on_stats)
     dispatcher.add_handler(stats_handler)
