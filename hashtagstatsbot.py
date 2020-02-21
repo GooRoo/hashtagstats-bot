@@ -462,7 +462,7 @@ def main(webhook=False):
     updater = Updater(token=TOKEN, use_context=True)
 
     dispatcher = updater.dispatcher
-    job_queue = updated.job_queue
+    job_queue = updater.job_queue
 
 
     start_handler = CommandHandler('start', on_help)
