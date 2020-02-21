@@ -507,7 +507,7 @@ def main(webhook=False):
         repeat=True,
         context=int(os.environ['TG_INIT_CHAT_ID']),
         name='weekly_stats',
-        days=Days.MON,
+        days=(Days.MON,),
         job_queue=job_queue
     )
     job_queue._put(
