@@ -5,7 +5,8 @@ import telegram
 from datetime import timedelta
 from delorean import Delorean
 from telegram import MessageEntity, ReplyKeyboardMarkup, ReplyKeyboardRemove, ParseMode
-from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
+from telegram.ext import CommandHandler, Filters, Job, MessageHandler, Updater
+from telegram.ext.jobqueue import Days
 
 import db
 
@@ -270,7 +271,7 @@ def on_user_stats(update, context):
 
         links = d.links_by_author(user_id, chat_id).fetchone()
         if links is not None:
-            if links["sum"] == 0:
+            if links["sum"] == 0 or links["sum"] is None:
                 reply += ' При этом умудряется сохранять молчание в плане ссылок (их — *ноль*).'
                 reply += ' Ни на что намекать мы, конечно, не будем.'
             else:
@@ -316,9 +317,9 @@ def weekly_contributors(chat_id):
     now = Delorean()
     step_from = 1 if now.date.isoweekday() == 1 else 2
     from_ = now.last_monday(step_from).date
-    to = now.last_sunday().date if now.date.isoweekday() == 7 else now.date
+    to = now.last_sunday().date
     contribs = d.top_contributors_by_date(chat_id, from_=from_, to=to).fetchall()
-    if contribs is not None:
+    if contribs is not None and len(contribs) > 0:
         reply = f'*Результаты недели* ({format_date(from_)}–{format_date(to)}):\n\n'
 
         cs = [
@@ -461,6 +462,8 @@ def main(webhook=False):
     updater = Updater(token=TOKEN, use_context=True)
 
     dispatcher = updater.dispatcher
+    job_queue = updated.job_queue
+
 
     start_handler = CommandHandler('start', on_help)
     help_handler = CommandHandler('help', on_help)
@@ -497,6 +500,20 @@ def main(webhook=False):
     dispatcher.add_handler(new_msg_handler)
 
     dispatcher.add_error_handler(error)
+
+    new_job = Job(
+        on_weekly_stats,
+        interval=timedelta(weeks=1),
+        repeat=True,
+        context=int(os.environ['TG_INIT_CHAT_ID']),
+        name='weekly_stats',
+        days=Days.MON,
+        job_queue=job_queue
+    )
+    job_queue._put(
+        new_job,
+        Delorean(timezone='Europe/Berlin').next_monday().midnight + timedelta(hours=8)
+    )
 
     if webhook:
         logger.info('Creating a webhook...')
