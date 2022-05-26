@@ -12,8 +12,8 @@ import db
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    # level=logging.DEBUG
-    level=logging.INFO
+    level=logging.DEBUG
+    # level=logging.INFO
 )
 
 logger = logging.Logger(__name__)
