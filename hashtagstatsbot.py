@@ -521,7 +521,7 @@ def main(webhook=False):
             port=int(os.environ.get('PORT', '8443')),
             url_path=TOKEN
         )
-        updater.bot.set_webhook('https://hashtagstats-bot.herokuapp.com/' + TOKEN)
+        updater.bot.set_webhook(f'''{os.environ['URL']}/{TOKEN}''')
     else:
         logger.info('Starting polling...')
         updater.start_polling()
