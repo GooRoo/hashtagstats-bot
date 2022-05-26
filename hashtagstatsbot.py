@@ -358,8 +358,7 @@ def enable_weekly_stats(update, context):
     )
     context.chat_data['weekly_stats'] = new_job
 
-    context.bot.send_message(chat_id, 'Отныне каждую неделю я буду присылать краткую статистику в следующем формате:')
-    context.bot.send_message(chat_id, weekly_contributors(chat_id), parse_mode=ParseMode.MARKDOWN)
+    context.bot.send_message(chat_id, 'Еженедельные дайджесты включены.')
 
 
 def disable_weekly_stats(update, context):
